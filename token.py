@@ -1,1 +1,1 @@
-token = "token goes here"
+my_token = "token here"
