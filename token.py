@@ -1,1 +1,1 @@
-TOKEN = "token goes here"
+token = "token goes here"
