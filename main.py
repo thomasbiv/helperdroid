@@ -4,6 +4,8 @@ from discord.ext.commands import bot
 from discord.ext import commands
 from discord.ext.commands.help import HelpCommand
 
+GUILD_ID = 750800943720824954 #Insert your guild ID here
+
 intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix='^', intents=intents)
@@ -27,8 +29,9 @@ async def on_message(message):
 
 @bot.event
 async def on_member_join(member):
-    guild = bot.get_guild(750800943720824954)
-    channel = bot.get_channel(992579689845637140)
+    guild = bot.get_guild(GUILD_ID)
+    channel = discord.utils.get(guild.channels, name='welcome')
+    #channel = bot.get_channel(992579689845637140)
     embed = discord.Embed(title = "***New Member***", description = f"Thanks {member.mention} for joining! Welcome to {guild.name}!")
     embed.set_footer(text = "MachoDroid")
     await channel.send(embed = embed)
