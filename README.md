@@ -12,7 +12,9 @@ they also have access to your bot which means it is possible for them to use you
 
 Below is a list of all the current commands with descriptions.
 
+* help
+  * Description: View information on all commands or on a specified commmand.
+  * Syntax: ```^help``` or ```^help <command name>```
 * rules
-  * Description :Display the server rules.
+  * Description: Display the server rules.
   * Syntax: ```^rules```
-  
