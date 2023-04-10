@@ -2,9 +2,13 @@ import discord
 from mytoken import my_token
 from discord.ext.commands import bot
 from discord.ext import commands
+from discord.ext import tasks
 from discord.ext.commands.help import HelpCommand
+from twitch import check_if_live
 
-GUILD_ID = 750800943720824954 #Insert your guild ID here
+isLive = False
+
+GUILD_ID = 769713139729432586 #Insert your guild ID here
 
 intents = discord.Intents.default()
 intents.members = True
@@ -17,12 +21,13 @@ async def on_ready():
     await bot.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.listening, name=" your commands 🤖"))
     print("We have logged in as {0.user}".format(bot))
     bot.load_extension('mainCommands')
+    twitch_live_notifs.start()
 
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
-
+    
     if message.content.startswith("^"):
         await message.add_reaction("👍")
     await bot.process_commands(message)
@@ -46,6 +51,25 @@ async def on_member_join(member):
     embed.add_field(name="5.", value="If you observe an individual(s) breaking one of the aforementioned rules, report the situation to a server administrator.", inline=False)
     embed.set_footer(text = "MachoDroid")
     await member.send(embed=embed)
+
+
+@tasks.loop(seconds=30)
+async def twitch_live_notifs():
+    global isLive
+    channel = "MachoSpacemanGaming"
+    stream = check_if_live(channel)
+    text_chat = bot.get_channel(769713139729432590)
+    if stream == "OFFLINE" and isLive == False:
+        await text_chat.send(channel + " is offline.")
+    elif stream != "OFFLINE" and isLive == True:
+        await text_chat.send(channel + " is still live!")
+    elif stream != "OFFLINE" and isLive == False:
+        isLive = True
+        await text_chat.send(channel + " is live!")
+    elif stream == "OFFLINE" and isLive == 1:
+        await text_chat.send(channel + " just went offline.")
+        isLive = 0
+
 
 @bot.group(invoke_without_command = True)
 async def help(ctx):
