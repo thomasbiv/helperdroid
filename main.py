@@ -1,14 +1,26 @@
+import os
+import requests
 import discord
 from mytoken import my_token
 from discord.ext.commands import bot
 from discord.ext import commands
 from discord.ext import tasks
 from discord.ext.commands.help import HelpCommand
-from twitch import check_if_live
+from secret import client_id, client_secret, twitch_api_url, check_stream_url
 
 isLive = False
 
 GUILD_ID = 769713139729432586 #Insert your guild ID here
+TWITCH_NOTIF_CHANNEL = 769713139729432590 
+
+# Twitch API authorization
+auth_response = requests.post(f'{twitch_api_url}oauth2/token', {
+    'client_id': client_id,
+    'client_secret': client_secret,
+    'grant_type': 'client_credentials'
+})
+auth_response.raise_for_status()
+access_token = auth_response.json()['access_token']
 
 intents = discord.Intents.default()
 intents.members = True
@@ -21,7 +33,8 @@ async def on_ready():
     await bot.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.listening, name=" your commands 🤖"))
     print("We have logged in as {0.user}".format(bot))
     bot.load_extension('mainCommands')
-    twitch_live_notifs.start()
+    check_twitch.start()
+    
 
 @bot.event
 async def on_message(message):
@@ -54,21 +67,35 @@ async def on_member_join(member):
 
 
 @tasks.loop(seconds=30)
-async def twitch_live_notifs():
+async def check_twitch():
+    # Twitch API request
+    streamer_username = 'machospacemangaming'
+    headers = {'Authorization': f'Bearer {access_token}', 'Client-Id': client_id}
+    params = {'user_login': streamer_username}
+    response = requests.get(f'{check_stream_url}/streams', headers=headers, params=params)
+    response.raise_for_status()
+    data = response.json()['data']
+    channel = bot.get_channel(TWITCH_NOTIF_CHANNEL)
     global isLive
-    channel = "MachoSpacemanGaming"
-    stream = check_if_live(channel)
-    text_chat = bot.get_channel(769713139729432590)
-    if stream == "OFFLINE" and isLive == False:
-        await text_chat.send(channel + " is offline.")
-    elif stream != "OFFLINE" and isLive == True:
-        await text_chat.send(channel + " is still live!")
-    elif stream != "OFFLINE" and isLive == False:
-        isLive = True
-        await text_chat.send(channel + " is live!")
-    elif stream == "OFFLINE" and isLive == 1:
-        await text_chat.send(channel + " just went offline.")
-        isLive = 0
+
+    # Check if streamer is live and post notification in Discord text channel
+    if len(data) > 0:
+        stream_info = data[0]
+        stream_title = stream_info['title']
+        stream_game = stream_info['game_name']
+        print(f'{data[0]["user_name"]} is live!') # For debug purposes
+        if channel is not None:
+            if isLive == False:
+                message = f'{streamer_username} is now live playing {stream_game}: {stream_title}! Check it out at https://www.twitch.tv/{streamer_username}'
+                await channel.send(message)
+                isLive = True
+        else:
+            print(f'Error. could not find channel with id {TWITCH_NOTIF_CHANNEL}')
+    else:
+        if isLive == True:
+            isLive = False
+
+        print(f'{streamer_username} is offline.') # For debug purposes
 
 
 @bot.group(invoke_without_command = True)
@@ -85,4 +112,5 @@ async def rules(ctx):
     embed.set_footer(text = "MachoDroid")
     await ctx.send(embed = embed)
 
+#check_twitch.start()
 bot.run(my_token)
