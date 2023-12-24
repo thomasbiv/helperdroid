@@ -69,7 +69,7 @@ async def on_member_join(member):
 @tasks.loop(seconds=30)
 async def check_twitch():
     # Twitch API request
-    streamer_username = 'machospacemangaming'
+    streamer_username = 'xQc'
     headers = {'Authorization': f'Bearer {access_token}', 'Client-Id': client_id}
     params = {'user_login': streamer_username}
     response = requests.get(f'{check_stream_url}/streams', headers=headers, params=params)
